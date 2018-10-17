@@ -295,6 +295,37 @@ PluginMarkerCluster.prototype.redrawClusters = function(onSuccess, onError, args
           if (markerProperties.snippet) {
             marker.set('snippet', markerProperties.snippet);
           }
+          if (marker.icon && markerProperties.icon && marker.icon.url !== markerProperties.icon.url) {
+            var updatedIcon = markerProperties.icon;
+
+            tasks.push(new Promise(function (resolve, reject) {
+
+              self.setIconToClusterMarker.call(self, clusterId_markerId, marker, updatedIcon)
+                .then(function () {
+                  //--------------------------------------
+                  // Marker was updated
+                  //--------------------------------------
+                  marker.setVisible(true);
+                  self.pluginMarkers[clusterId_markerId] = STATUS.CREATED;
+                  resolve();
+                })
+                .catch(function (error) {
+                  //--------------------------------------
+                  // Could not read icon for some reason
+                  //--------------------------------------
+                  if (marker.get('overlayId')) {
+                    self._removeMarker.call(self, marker);
+                  }
+                  self.pluginMarkers[clusterId_markerId] = STATUS.DELETED;
+
+                  console.error(error);
+                  self.deleteMarkers.push(clusterId_markerId);
+                  resolve();
+                });
+
+            }));
+          }
+
           if (self.pluginMarkers[clusterId_markerId] === STATUS.DELETED) {
             self._removeMarker.call(self, marker);
             delete self.pluginMarkers[clusterId_markerId];

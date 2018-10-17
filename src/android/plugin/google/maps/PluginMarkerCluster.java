@@ -455,6 +455,39 @@ public class PluginMarkerCluster extends PluginMarker {
               if (markerProperties.containsKey("snippet")) {
                 marker.setSnippet(markerProperties.getString("snippet"));
               }
+              if (markerProperties.containsKey("icon")) {
+                Bundle icon = markerProperties.getBundle("icon");
+                final String fMarkerId = clusterId_markerId;
+                //Log.d(TAG, "---> targetMarkerId = " + targetMarkerId + ", marker = " + marker);
+                setIconToClusterMarker(clusterId_markerId, marker, icon, new PluginAsyncInterface() {
+                  @Override
+                  public void onPostExecute(Object object) {
+                    //--------------------------------------
+                    // Marker was updated
+                    //--------------------------------------
+                    decreaseWaitCnt(clusterId);
+                    synchronized (pluginMarkers) {
+                      //Log.d(TAG, "create : " + fMarkerId + " = CREATED");
+                      pluginMarkers.put(fMarkerId, STATUS.CREATED);
+                    }
+                  }
+
+                  @Override
+                  public void onError(String errorMsg) {
+                    //--------------------------------------
+                    // Could not read icon for some reason
+                    //--------------------------------------
+                    Log.e(TAG, errorMsg);
+                    decreaseWaitCnt(clusterId);
+                    synchronized (deleteMarkers) {
+                      deleteMarkers.add(fMarkerId);
+                    }
+                    synchronized (pluginMarkers) {
+                      pluginMarkers.put(fMarkerId, STATUS.DELETED);
+                    }
+                  }
+                });
+              }
               synchronized (pluginMarkers) {
                 if (pluginMarkers.get(clusterId_markerId) == STATUS.DELETED) {
                   _removeMarker(marker);

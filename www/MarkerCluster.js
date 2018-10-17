@@ -114,6 +114,7 @@ var MarkerCluster = function(map, markerClusterOptions, _exec) {
 
     var markerId = (markerOptions.__pgmId || "marker_" + idxCount);
     markerOptions.__pgmId = markerId;
+    markerOptions._isVisible = false;
     markerOptions._cluster = {
       isRemoved: false,
       isAdded: false,
@@ -1031,6 +1032,13 @@ MarkerCluster.prototype._redraw = function(params) {
   }
 
   self.exec.call(self, function(allResults) {
+    new_or_update_clusters.forEach(function (marker) {
+      if (self._markerMap[marker.__pgmId]) self._markerMap[marker.__pgmId]._isVisible = true;
+    });
+    delete_clusters.forEach(function (markerId) {
+      if (self._markerMap[markerId]) self._markerMap[markerId]._isVisible = false;
+    });
+
     var markerIDs = Object.keys(allResults);
     markerIDs.forEach(function(markerId) {
       if (!self._markerMap[markerId]) {
@@ -1063,6 +1071,79 @@ MarkerCluster.prototype._redraw = function(params) {
                     "delete": delete_clusters
                   });
 */
+};
+
+MarkerCluster.prototype.redrawClusters = function(new_or_update_clusters, delete_clusters) {
+  var self = this;
+
+  if (self._isRemoved || self._stopRequest || self._isWorking || !self._isReady) {
+    return null;
+  }
+  var currentZoomLevel = self.map.getCameraZoom();
+  currentZoomLevel = currentZoomLevel < 0 ? 0 : currentZoomLevel;
+
+  var resolution = 1;
+  resolution = self.maxZoomLevel > 3 && currentZoomLevel > 3 ? 2 : resolution;
+  resolution = self.maxZoomLevel > 5 && currentZoomLevel > 5 ? 3 : resolution;
+  resolution = self.maxZoomLevel > 7 && currentZoomLevel > 7 ? 4 : resolution;
+  resolution = self.maxZoomLevel > 9 && currentZoomLevel > 9 ? 5 : resolution;
+  resolution = self.maxZoomLevel > 11 && currentZoomLevel > 11 ? 6 : resolution;
+  resolution = self.maxZoomLevel > 13 && currentZoomLevel > 13 ? 7 : resolution;
+  resolution = self.maxZoomLevel > 15 && currentZoomLevel > 15 ? 8 : resolution;
+  resolution = self.maxZoomLevel > 17 && currentZoomLevel > 17 ? 9 : resolution;
+  resolution = self.maxZoomLevel > 19 && currentZoomLevel > 19 ? 10 : resolution;
+  resolution = self.maxZoomLevel > 21 && currentZoomLevel > 21 ? 11 : resolution;
+
+  self.exec.call(self, function(allResults) {
+    var markerIDs = Object.keys(allResults);
+    markerIDs.forEach(function(markerId) {
+      if (!self._markerMap[markerId]) {
+        return;
+      }
+      var size = allResults[markerId];
+      if (typeof self._markerMap[markerId].icon === 'string') {
+        self._markerMap[markerId].icon = {
+          'url': self._markerMap[markerId].icon,
+          'size': size,
+          'anchor': [size.width / 2, size.height]
+        };
+      } else {
+        self._markerMap[markerId].icon = self._markerMap[markerId].icon || {};
+        self._markerMap[markerId].icon.size = self._markerMap[markerId].icon.size || size;
+        self._markerMap[markerId].icon.anchor = self._markerMap[markerId].icon.anchor || [size.width / 2, size.height];
+      }
+      self._markerMap[markerId].infoWindowAnchor = self._markerMap[markerId].infoWindowAnchor || [self._markerMap[markerId].icon.size.width / 2, 0];
+    });
+    self.trigger("nextTask");
+  }, self.errorHandler, self.getPluginName(), 'redrawClusters', [self.getId(), {
+    "resolution": resolution,
+    "new_or_update": new_or_update_clusters,
+    "delete": delete_clusters
+  }], {sync: true});
+};
+
+/**
+ * Example call:
+ * cluster.updateIcon(marker => marker.id === 'mainroad-1', {"url":"./pollution-high.png","size":{"width":36,"height":36},"scaledSize":{"width":36,"height":36},"anchor":[18,36]});
+ *
+ * @param selector
+ * @param icon
+ */
+MarkerCluster.prototype.updateIcon = function(selector, icon) {
+  var self = this;
+
+  if (self._isRemoved || self._stopRequest || self._isWorking || !self._isReady) {
+    return null;
+  }
+
+  Object.keys(self._markerMap).forEach(function(markerId) {
+    if (selector(self._markerMap[markerId])) {
+      self._markerMap[markerId].icon = icon;
+      if (self._markerMap[markerId]._isVisible) {
+        self.redrawClusters([self._markerMap[markerId]], []);
+      }
+    }
+  });
 };
 
 MarkerCluster.prototype.getClusterIcon = function(cluster) {
