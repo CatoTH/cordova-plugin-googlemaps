@@ -2170,6 +2170,24 @@ public class PluginMap extends MyPlugin implements OnMarkerClickListener,
   }
 
   /**
+   * Sets the preference for whether the matToolbar should be shown or not.
+   * @param args
+   * @param callbackContext
+   * @throws JSONException
+   */
+  public void setMapToolbarEnabled(final JSONArray args, final CallbackContext callbackContext) throws JSONException {
+    final Boolean isEnabled = args.getBoolean(0);
+    this.activity.runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        UiSettings uiSettings = map.getUiSettings();
+        uiSettings.setMapToolbarEnabled(isEnabled);
+        callbackContext.success();
+      }
+    });
+  }
+
+  /**
    * Sets padding of the map
    * @param args
    * @param callbackContext

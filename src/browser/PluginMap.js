@@ -510,6 +510,16 @@ PluginMap.prototype.setAllGesturesEnabled = function(onSuccess, onError, args) {
 
   onSuccess();
 };
+PluginMap.prototype.setMapToolbarEnabled = function(onSuccess, onError, args) {
+  var self = this;
+  var map = self.get("map");
+  var enabled = args[0];
+  map.setOptions({
+    mapToolbarEnabled: enabled === true
+  });
+
+  onSuccess();
+};
 PluginMap.prototype.setCompassEnabled = function(onSuccess, onError, args) {
   var self = this;
   var map = self.get("map");

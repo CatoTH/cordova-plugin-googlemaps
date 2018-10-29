@@ -596,6 +596,12 @@ Map.prototype.setCompassEnabled = function(enabled) {
   self.exec.call(self, null, self.errorHandler, this.id, 'setCompassEnabled', [enabled]);
   return this;
 };
+Map.prototype.setMapToolbarEnabled = function(enabled) {
+  var self = this;
+  enabled = common.parseBoolean(enabled);
+  self.exec.call(self, null, self.errorHandler, this.id, 'setMapToolbarEnabled', [enabled]);
+  return this;
+};
 Map.prototype.getFocusedBuilding = function(callback) {
   var self = this;
   var resolver = function(resolve, reject) {
